@@ -1,24 +1,58 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: dashboard
-      APP_PORT: 8080
-  dashboard:
-    image: python:3.12-alpine@sha256:9ba6d8cbebf0fb6546ae71f2a1c14f6ffd2fdab83af7fa5669734ef30ad48844
-    command: ["python","/app/server.py"]
-    volumes:
-      - ${APP_DATA_DIR}/dashboard:/app:ro
+      APP_HOST: jjmining-litecoin-node_dashboard_1
+      APP_PORT: "8080"
+  init:
+    image: alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+    command: ["/bin/sh", "/opt/jj/init.sh"]
     environment:
+      CONF_NAME: litecoin.conf
+    volumes:
+      - ../common/init.sh:/opt/jj/init.sh:ro
+      - ${APP_DATA_DIR}/secrets:/secrets
+      - ${APP_DATA_DIR}/config:/config
+      - ${APP_DATA_DIR}/data:/data
+    restart: "no"
+  litecoin:
+    image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+    build:
+      context: ../common
+      dockerfile: Coin.Dockerfile
+      args:
+        COIN: litecoin
+        ARG_VERSION: 0.21.5.6
+        SHA_AMD64: 3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f
+        SHA_ARM64: 81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8
+    environment:
+      DAEMON: litecoind
+      CONF_NAME: litecoin.conf
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}/config:/config:ro
+    ports:
+      - "9333:9333/tcp"
+    restart: unless-stopped
+    stop_grace_period: 2m
+    healthcheck:
+      test: ["CMD-SHELL", "litecoin-cli -datadir=/data -conf=/config/litecoin.conf getblockchaininfo >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 5
+  dashboard:
+    image: ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0
+    build: ../common/node-dashboard
+    environment:
+      COIN: Litecoin
       RPC_HOST: litecoin
       RPC_PORT: "9332"
-      RPC_USER: jjrpc
-      RPC_PASSWORD: jj-litecoin-change-me
-    restart: on-failure
-  litecoin:
-    image: litecoinproject/litecoin-core:0.21.5.5
-    command: ["-server=1","-printtoconsole=1","-txindex=1","-rpcbind=0.0.0.0","-rpcallowip=10.21.0.0/16","-rpcuser=jjrpc","-rpcpassword=jj-litecoin-change-me"]
+    depends_on:
+      init: {condition: service_completed_successfully}
     volumes:
-      - ${APP_DATA_DIR}/data:/home/litecoin/.litecoin
-    ports:
-      - "9333:9333"
-    restart: on-failure
+      - ${APP_DATA_DIR}/secrets:/run/jjmining:ro
+      - ${APP_DATA_DIR}/data:/data:ro
+    restart: unless-stopped
+    init: true

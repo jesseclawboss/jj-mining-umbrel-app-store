@@ -1,120 +1,83 @@
-version: "3.7"
-
 services:
   app_proxy:
     environment:
-      APP_HOST: jjmining-ltc-doge-p2pool_p2pool_1
-      APP_PORT: 9327
-
-  litecoin:
-    image: litecoinproject/litecoin-core:0.21.5.5
-    restart: on-failure
-    stop_grace_period: 2m
-    command:
-      - -printtoconsole=1
-      - -server=1
-      - -txindex=1
-      - -rpcbind=0.0.0.0
-      - -rpcallowip=10.21.0.0/16
-      - -rpcuser=${LTC_RPC_USER:-litecoinrpc}
-      - -rpcpassword=${LTC_RPC_PASSWORD:-CHANGE_ME_LTC}
+      APP_HOST: jjmining-ltc-doge-p2pool_dashboard_1
+      APP_PORT: "8080"
+  init:
+    image: alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+    command: ["/bin/sh", "/opt/jj/init.sh"]
     volumes:
-      - ${APP_DATA_DIR}/data/litecoin:/home/litecoin/.litecoin
-    networks:
-      default:
-        ipv4_address: 10.21.0.10
-
-  dogecoin:
-    image: ich777/dogecoin-core:latest
-    restart: on-failure
-    stop_grace_period: 2m
-    environment:
-      - UID=1000
-      - GID=1000
-      - UMASK=000
-      - DATA_DIR=/dogecoin
-      - START_PARAMS=-server=1 -printtoconsole=1 -rpcbind=0.0.0.0 -rpcallowip=10.21.0.0/16 -rpcuser=${DOGE_RPC_USER:-dogecoinrpc} -rpcpassword=${DOGE_RPC_PASSWORD:-CHANGE_ME_DOGE}
-    volumes:
-      - ${APP_DATA_DIR}/data/dogecoin:/dogecoin
-    networks:
-      default:
-        ipv4_address: 10.21.0.11
-
-  source:
-    image: alpine/git:2.47.2
+      - ./runtime/init.sh:/opt/jj/init.sh:ro
+      - ${APP_DATA_DIR}/secrets:/secrets
+      - ${APP_DATA_DIR}/config:/config
+      - ${APP_DATA_DIR}/data:/data
     restart: "no"
-    entrypoint: ["/bin/sh", "-c"]
-    command: >-
-      rm -rf /src/* &&
-      git clone --depth 1 https://github.com/frstrtr/p2pool-merged-v36.git /src &&
-      touch /src/.ready
-    volumes:
-      - p2pool-source:/src
-    networks:
-      default:
-        ipv4_address: 10.21.0.12
-
+  litecoin:
+    image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+    build:
+      context: ../common
+      dockerfile: Coin.Dockerfile
+      args: {COIN: litecoin, ARG_VERSION: 0.21.5.6, SHA_AMD64: 3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f, SHA_ARM64: 81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8}
+    environment: {DAEMON: litecoind, CONF_NAME: litecoin.conf}
+    depends_on: {init: {condition: service_completed_successfully}}
+    volumes: ["${APP_DATA_DIR}/data/litecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
+    ports: ["9333:9333/tcp"]
+    restart: unless-stopped
+    stop_grace_period: 2m
+    healthcheck:
+      test: ["CMD-SHELL", "litecoin-cli -datadir=/data -conf=/config/litecoin.conf getblockchaininfo >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 5
+  dogecoin:
+    image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
+    build:
+      context: ../common
+      dockerfile: Coin.Dockerfile
+      args: {COIN: dogecoin, ARG_VERSION: 1.14.9, SHA_AMD64: 4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8, SHA_ARM64: 6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985}
+    environment: {DAEMON: dogecoind, CONF_NAME: dogecoin.conf}
+    depends_on: {init: {condition: service_completed_successfully}}
+    volumes: ["${APP_DATA_DIR}/data/dogecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
+    ports: ["22556:22556/tcp"]
+    restart: unless-stopped
+    stop_grace_period: 2m
+    healthcheck:
+      test: ["CMD-SHELL", "dogecoin-cli -datadir=/data -conf=/config/dogecoin.conf getblockchaininfo >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 5
   mm-adapter:
-    image: python:3.12-slim
-    restart: on-failure
-    depends_on:
-      source:
-        condition: service_completed_successfully
-      dogecoin:
-        condition: service_started
-    entrypoint: ["/bin/sh", "-c"]
-    command: >-
-      test -f /src/.ready &&
-      pip install --no-cache-dir -r /src/mm-adapter/requirements.txt &&
-      python /src/mm-adapter/adapter.py --config /config/mm-adapter.yaml
-    volumes:
-      - p2pool-source:/src:ro
-      - ${APP_DATA_DIR}/config:/config:ro
-    networks:
-      default:
-        ipv4_address: 10.21.0.13
-
+    image: ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-1
+    build: {context: ./runtime, dockerfile: Adapter.Dockerfile}
+    depends_on: {init: {condition: service_completed_successfully}, dogecoin: {condition: service_started}}
+    volumes: ["${APP_DATA_DIR}/config:/config:ro"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:44556/', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
   p2pool:
-    image: ghcr.io/frstrtr/p2pool-merged-v36:latest
-    restart: on-failure
-    depends_on:
-      litecoin:
-        condition: service_started
-      mm-adapter:
-        condition: service_started
-    command: >-
-      --net litecoin
-      --coind-address 10.21.0.10
-      --coind-rpc-port 9332
-      --coind-p2p-port 9333
-      --merged-coind-address 10.21.0.13
-      --merged-coind-rpc-port 44556
-      --merged-coind-p2p-port 22556
-      --merged-coind-p2p-address 10.21.0.11
-      --merged-coind-rpc-user ${DOGE_RPC_USER:-dogecoinrpc}
-      --merged-coind-rpc-password ${DOGE_RPC_PASSWORD:-CHANGE_ME_DOGE}
-      --address ${LTC_PAYOUT_ADDRESS:-REPLACE_WITH_LEGACY_LTC_ADDRESS}
-      --give-author ${DONATE_PERCENT:-2}
-      -f ${NODE_FEE:-0}
-      --disable-upnp
-      --max-conns ${MAX_CONNS:-20}
-      --redistribute ${REDISTRIBUTE:-boost}
-      ${LTC_RPC_USER:-litecoinrpc} ${LTC_RPC_PASSWORD:-CHANGE_ME_LTC}
-    ports:
-      - "9327:9327/tcp"
-      - "9326:9326/tcp"
-    volumes:
-      - ${APP_DATA_DIR}/data/p2pool:/app/data
-    networks:
-      default:
-        ipv4_address: 10.21.0.14
-
-volumes:
-  p2pool-source:
-
-networks:
-  default:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.21.0.0/16
+    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1
+    platform: linux/amd64
+    build: {context: ./runtime, dockerfile: P2Pool.Dockerfile}
+    depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
+    volumes: ["${APP_DATA_DIR}/data/p2pool:/app/data", "${APP_DATA_DIR}/config:/config:ro", "${APP_DATA_DIR}/secrets:/secrets:ro"]
+    ports: ["9327:9327/tcp", "9326:9326/tcp"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pypy", "-c", "import urllib2; urllib2.urlopen('http://127.0.0.1:9327/local_stats', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 2m
+      retries: 5
+  dashboard:
+    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0
+    build: ./dashboard
+    depends_on: {init: {condition: service_completed_successfully}}
+    volumes: ["${APP_DATA_DIR}/config:/config", "${APP_DATA_DIR}/secrets:/secrets:ro"]
+    restart: unless-stopped
+    init: true

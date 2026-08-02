@@ -1,24 +1,58 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: dashboard
-      APP_PORT: 8080
-  dashboard:
-    image: python:3.12-alpine@sha256:9ba6d8cbebf0fb6546ae71f2a1c14f6ffd2fdab83af7fa5669734ef30ad48844
-    command: ["python","/app/server.py"]
-    volumes:
-      - ${APP_DATA_DIR}/dashboard:/app:ro
+      APP_HOST: jjmining-dogecoin-node_dashboard_1
+      APP_PORT: "8080"
+  init:
+    image: alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+    command: ["/bin/sh", "/opt/jj/init.sh"]
     environment:
-      RPC_HOST: dogecoin
-      RPC_PORT: "22555"
-      RPC_USER: jjrpc
-      RPC_PASSWORD: jj-dogecoin-change-me
-    restart: on-failure
+      CONF_NAME: dogecoin.conf
+    volumes:
+      - ../common/init.sh:/opt/jj/init.sh:ro
+      - ${APP_DATA_DIR}/secrets:/secrets
+      - ${APP_DATA_DIR}/config:/config
+      - ${APP_DATA_DIR}/data:/data
+    restart: "no"
   dogecoin:
-    image: coinmetrics/dogecoin:1.14.9
-    command: ["dogecoind","-datadir=/data","-server=1","-printtoconsole=1","-txindex=1","-rpcbind=0.0.0.0","-rpcallowip=10.21.0.0/16","-rpcuser=jjrpc","-rpcpassword=jj-dogecoin-change-me"]
+    image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
+    build:
+      context: ../common
+      dockerfile: Coin.Dockerfile
+      args:
+        COIN: dogecoin
+        ARG_VERSION: 1.14.9
+        SHA_AMD64: 4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8
+        SHA_ARM64: 6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985
+    environment:
+      DAEMON: dogecoind
+      CONF_NAME: dogecoin.conf
+    depends_on:
+      init: {condition: service_completed_successfully}
     volumes:
       - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}/config:/config:ro
     ports:
-      - "22556:22556"
-    restart: on-failure
+      - "22556:22556/tcp"
+    restart: unless-stopped
+    stop_grace_period: 2m
+    healthcheck:
+      test: ["CMD-SHELL", "dogecoin-cli -datadir=/data -conf=/config/dogecoin.conf getblockchaininfo >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 5
+  dashboard:
+    image: ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0
+    build: ../common/node-dashboard
+    environment:
+      COIN: Dogecoin
+      RPC_HOST: dogecoin
+      RPC_PORT: "22555"
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes:
+      - ${APP_DATA_DIR}/secrets:/run/jjmining:ro
+      - ${APP_DATA_DIR}/data:/data:ro
+    restart: unless-stopped
+    init: true

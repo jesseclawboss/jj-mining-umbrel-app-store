@@ -1,22 +1,25 @@
 manifestVersion: 1
 id: jjmining-ltc-doge-p2pool
-name: LTC + DOGE P2Pool
+name: JJ LTC/DOGE Merged Mining
+tagline: Experimental P2Pool Litecoin and Dogecoin AuxPoW mining
+icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/icon.png
 category: bitcoin
-version: "0.1.0-alpha"
-tagline: Private Litecoin and Dogecoin merged-mining node for Scrypt ASICs
+version: "0.2.0-alpha"
+port: 2103
 description: >-
-  Experimental home mining stack using Litecoin Core, Dogecoin Core, and
-  P2Pool V36 AuxPoW merged mining. Intended for private LAN use and testing.
-developer: JJ Mining / Community
+  Experimental self-contained Litecoin parent-chain and Dogecoin AuxPoW stack using
+  the actively maintained P2Pool V36 fork. Includes private node RPC, validated payout setup,
+  Stratum for Scrypt ASICs, synchronization status, and upstream P2Pool statistics. amd64 only.
+developer: frstrtr / JJ Mining
 website: https://github.com/frstrtr/p2pool-merged-v36
-repo: https://github.com/frstrtr/p2pool-merged-v36
-support: https://github.com/frstrtr/p2pool-merged-v36/issues
-port: 9327
 submitter: JJ Mining
-submission: community
-releaseNotes: Initial experimental package. Requires configuration before startup.
+submission: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
+repo: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
+support: https://github.com/jesseclawboss/jj-mining-umbrel-app-store/issues
+gallery:
+  - https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/gallery/1.svg
+releaseNotes: Replaces unsafe scaffold with pinned upstream source, private generated RPC credentials, address validation, and a startup-safe dashboard.
 dependencies: []
 path: ""
 defaultUsername: ""
 defaultPassword: ""
-gallery: []
