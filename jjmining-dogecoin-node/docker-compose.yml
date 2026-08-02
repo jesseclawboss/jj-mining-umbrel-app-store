@@ -9,21 +9,13 @@ services:
     environment:
       CONF_NAME: dogecoin.conf
     volumes:
-      - ../common/init.sh:/opt/jj/init.sh:ro
+      - ./runtime/init.sh:/opt/jj/init.sh:ro
       - ${APP_DATA_DIR}/secrets:/secrets
       - ${APP_DATA_DIR}/config:/config
       - ${APP_DATA_DIR}/data:/data
     restart: "no"
   dogecoin:
     image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
-    build:
-      context: ../common
-      dockerfile: Coin.Dockerfile
-      args:
-        COIN: dogecoin
-        ARG_VERSION: 1.14.9
-        SHA_AMD64: 4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8
-        SHA_ARM64: 6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985
     environment:
       DAEMON: dogecoind
       CONF_NAME: dogecoin.conf
@@ -44,7 +36,6 @@ services:
       retries: 5
   dashboard:
     image: ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0
-    build: ../common/node-dashboard
     environment:
       COIN: Dogecoin
       RPC_HOST: dogecoin

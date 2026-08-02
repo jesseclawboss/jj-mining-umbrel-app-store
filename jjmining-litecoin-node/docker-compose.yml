@@ -9,21 +9,13 @@ services:
     environment:
       CONF_NAME: litecoin.conf
     volumes:
-      - ../common/init.sh:/opt/jj/init.sh:ro
+      - ./runtime/init.sh:/opt/jj/init.sh:ro
       - ${APP_DATA_DIR}/secrets:/secrets
       - ${APP_DATA_DIR}/config:/config
       - ${APP_DATA_DIR}/data:/data
     restart: "no"
   litecoin:
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
-    build:
-      context: ../common
-      dockerfile: Coin.Dockerfile
-      args:
-        COIN: litecoin
-        ARG_VERSION: 0.21.5.6
-        SHA_AMD64: 3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f
-        SHA_ARM64: 81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8
     environment:
       DAEMON: litecoind
       CONF_NAME: litecoin.conf
@@ -44,7 +36,6 @@ services:
       retries: 5
   dashboard:
     image: ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0
-    build: ../common/node-dashboard
     environment:
       COIN: Litecoin
       RPC_HOST: litecoin

@@ -14,10 +14,6 @@ services:
     restart: "no"
   litecoin:
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
-    build:
-      context: ../common
-      dockerfile: Coin.Dockerfile
-      args: {COIN: litecoin, ARG_VERSION: 0.21.5.6, SHA_AMD64: 3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f, SHA_ARM64: 81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8}
     environment: {DAEMON: litecoind, CONF_NAME: litecoin.conf}
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/data/litecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
@@ -32,10 +28,6 @@ services:
       retries: 5
   dogecoin:
     image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
-    build:
-      context: ../common
-      dockerfile: Coin.Dockerfile
-      args: {COIN: dogecoin, ARG_VERSION: 1.14.9, SHA_AMD64: 4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8, SHA_ARM64: 6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985}
     environment: {DAEMON: dogecoind, CONF_NAME: dogecoin.conf}
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/data/dogecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
@@ -50,7 +42,6 @@ services:
       retries: 5
   mm-adapter:
     image: ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-1
-    build: {context: ./runtime, dockerfile: Adapter.Dockerfile}
     depends_on: {init: {condition: service_completed_successfully}, dogecoin: {condition: service_started}}
     volumes: ["${APP_DATA_DIR}/config:/config:ro"]
     restart: unless-stopped
@@ -63,7 +54,6 @@ services:
   p2pool:
     image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1
     platform: linux/amd64
-    build: {context: ./runtime, dockerfile: P2Pool.Dockerfile}
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
     volumes: ["${APP_DATA_DIR}/data/p2pool:/app/data", "${APP_DATA_DIR}/config:/config:ro", "${APP_DATA_DIR}/secrets:/secrets:ro"]
     ports: ["9327:9327/tcp", "9326:9326/tcp"]
@@ -76,7 +66,6 @@ services:
       retries: 5
   dashboard:
     image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0
-    build: ./dashboard
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/config:/config", "${APP_DATA_DIR}/secrets:/secrets:ro"]
     restart: unless-stopped
