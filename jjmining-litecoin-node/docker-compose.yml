@@ -16,6 +16,7 @@ services:
     restart: "no"
   litecoin:
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+    user: "0:0"
     environment:
       DAEMON: litecoind
       CONF_NAME: litecoin.conf
@@ -36,6 +37,7 @@ services:
       retries: 5
   dashboard:
     image: ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0
+    user: "0:0"
     environment:
       COIN: Litecoin
       RPC_HOST: litecoin

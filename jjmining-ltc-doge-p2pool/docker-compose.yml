@@ -14,6 +14,7 @@ services:
     restart: "no"
   litecoin:
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+    user: "0:0"
     environment: {DAEMON: litecoind, CONF_NAME: litecoin.conf}
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/data/litecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
@@ -28,6 +29,7 @@ services:
       retries: 5
   dogecoin:
     image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
+    user: "0:0"
     environment: {DAEMON: dogecoind, CONF_NAME: dogecoin.conf}
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/data/dogecoin:/data", "${APP_DATA_DIR}/config:/config:ro"]
@@ -42,6 +44,7 @@ services:
       retries: 5
   mm-adapter:
     image: ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-1
+    user: "0:0"
     depends_on: {init: {condition: service_completed_successfully}, dogecoin: {condition: service_started}}
     volumes: ["${APP_DATA_DIR}/config:/config:ro"]
     restart: unless-stopped
@@ -53,6 +56,7 @@ services:
       retries: 5
   p2pool:
     image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1
+    user: "0:0"
     platform: linux/amd64
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
     volumes: ["${APP_DATA_DIR}/data/p2pool:/app/data", "${APP_DATA_DIR}/config:/config:ro", "${APP_DATA_DIR}/secrets:/secrets:ro"]
@@ -66,6 +70,7 @@ services:
       retries: 5
   dashboard:
     image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0
+    user: "0:0"
     depends_on: {init: {condition: service_completed_successfully}}
     volumes: ["${APP_DATA_DIR}/config:/config", "${APP_DATA_DIR}/secrets:/secrets:ro"]
     restart: unless-stopped

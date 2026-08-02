@@ -4,7 +4,7 @@ name: JJ Dogecoin Node
 tagline: A private Dogecoin full node with live sync status
 icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-dogecoin-node/icon.png
 category: bitcoin
-version: "1.1.1"
+version: "1.1.2"
 port: 2102
 description: >-
   Dogecoin Core 1.14.9 from official release binaries with persistent blockchain
@@ -17,7 +17,7 @@ repo: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
 support: https://github.com/jesseclawboss/jj-mining-umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-dogecoin-node/gallery/1.svg
-releaseNotes: Makes the Umbrel package self-contained while preserving official Core binaries, generated RPC credentials, and health checks.
+releaseNotes: Fixes Umbrel host-volume ownership so Dogecoin Core can write blockchain data and the dashboard can read private RPC credentials.
 dependencies: []
 path: ""
 defaultUsername: ""
