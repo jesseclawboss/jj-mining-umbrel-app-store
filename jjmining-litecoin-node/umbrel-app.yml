@@ -4,7 +4,7 @@ name: JJ Litecoin Node
 tagline: A private Litecoin full node with live sync status
 icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-litecoin-node/icon.png
 category: bitcoin
-version: "1.1.2"
+version: "1.1.3"
 port: 2101
 description: >-
   Litecoin Core 0.21.5.6 with persistent blockchain storage, private RPC,
@@ -17,7 +17,7 @@ repo: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
 support: https://github.com/jesseclawboss/jj-mining-umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-litecoin-node/gallery/1.svg
-releaseNotes: Fixes Umbrel host-volume ownership so Litecoin Core can write blockchain data and the dashboard can read private RPC credentials.
+releaseNotes: Generates private RPC credentials and configuration in the node service so startup is reliable on Umbrel.
 dependencies: []
 path: ""
 defaultUsername: ""

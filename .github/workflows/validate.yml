@@ -55,7 +55,7 @@ jobs:
           file: common/Coin.Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+          tags: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-2
           build-args: |
             COIN=litecoin
             ARG_VERSION=0.21.5.6
@@ -67,7 +67,7 @@ jobs:
           file: common/Coin.Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
+          tags: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-2
           build-args: |
             COIN=dogecoin
             ARG_VERSION=1.14.9
@@ -78,6 +78,6 @@ jobs:
       - uses: docker/build-push-action@v6
         with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0"}
       - uses: docker/build-push-action@v6
-        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-1"}
+        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-2"}
       - uses: docker/build-push-action@v6
         with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1"}
