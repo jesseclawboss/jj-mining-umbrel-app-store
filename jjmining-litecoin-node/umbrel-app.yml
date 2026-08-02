@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: jjmining-litecoin-node
+name: JJ Litecoin Node
+tagline: Run a private Litecoin full node
+category: bitcoin
+version: "1.0.0"
+port: 2101
+description: >-
+  Litecoin Core full node with persistent data and a simple browser synchronization dashboard.
+developer: JJ Mining
+website: https://github.com/
+submitter: JJ Mining
+submission: https://github.com/
+repo: https://github.com/
+support: https://github.com/
+gallery: []
+releaseNotes: Initial community release.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""

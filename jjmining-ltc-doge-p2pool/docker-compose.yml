@@ -1,0 +1,120 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: jjmining-ltc-doge-p2pool_p2pool_1
+      APP_PORT: 9327
+
+  litecoin:
+    image: litecoinproject/litecoin-core:0.21.5.5
+    restart: on-failure
+    stop_grace_period: 2m
+    command:
+      - -printtoconsole=1
+      - -server=1
+      - -txindex=1
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=10.21.0.0/16
+      - -rpcuser=${LTC_RPC_USER:-litecoinrpc}
+      - -rpcpassword=${LTC_RPC_PASSWORD:-CHANGE_ME_LTC}
+    volumes:
+      - ${APP_DATA_DIR}/data/litecoin:/home/litecoin/.litecoin
+    networks:
+      default:
+        ipv4_address: 10.21.0.10
+
+  dogecoin:
+    image: ich777/dogecoin-core:latest
+    restart: on-failure
+    stop_grace_period: 2m
+    environment:
+      - UID=1000
+      - GID=1000
+      - UMASK=000
+      - DATA_DIR=/dogecoin
+      - START_PARAMS=-server=1 -printtoconsole=1 -rpcbind=0.0.0.0 -rpcallowip=10.21.0.0/16 -rpcuser=${DOGE_RPC_USER:-dogecoinrpc} -rpcpassword=${DOGE_RPC_PASSWORD:-CHANGE_ME_DOGE}
+    volumes:
+      - ${APP_DATA_DIR}/data/dogecoin:/dogecoin
+    networks:
+      default:
+        ipv4_address: 10.21.0.11
+
+  source:
+    image: alpine/git:2.47.2
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      rm -rf /src/* &&
+      git clone --depth 1 https://github.com/frstrtr/p2pool-merged-v36.git /src &&
+      touch /src/.ready
+    volumes:
+      - p2pool-source:/src
+    networks:
+      default:
+        ipv4_address: 10.21.0.12
+
+  mm-adapter:
+    image: python:3.12-slim
+    restart: on-failure
+    depends_on:
+      source:
+        condition: service_completed_successfully
+      dogecoin:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      test -f /src/.ready &&
+      pip install --no-cache-dir -r /src/mm-adapter/requirements.txt &&
+      python /src/mm-adapter/adapter.py --config /config/mm-adapter.yaml
+    volumes:
+      - p2pool-source:/src:ro
+      - ${APP_DATA_DIR}/config:/config:ro
+    networks:
+      default:
+        ipv4_address: 10.21.0.13
+
+  p2pool:
+    image: ghcr.io/frstrtr/p2pool-merged-v36:latest
+    restart: on-failure
+    depends_on:
+      litecoin:
+        condition: service_started
+      mm-adapter:
+        condition: service_started
+    command: >-
+      --net litecoin
+      --coind-address 10.21.0.10
+      --coind-rpc-port 9332
+      --coind-p2p-port 9333
+      --merged-coind-address 10.21.0.13
+      --merged-coind-rpc-port 44556
+      --merged-coind-p2p-port 22556
+      --merged-coind-p2p-address 10.21.0.11
+      --merged-coind-rpc-user ${DOGE_RPC_USER:-dogecoinrpc}
+      --merged-coind-rpc-password ${DOGE_RPC_PASSWORD:-CHANGE_ME_DOGE}
+      --address ${LTC_PAYOUT_ADDRESS:-REPLACE_WITH_LEGACY_LTC_ADDRESS}
+      --give-author ${DONATE_PERCENT:-2}
+      -f ${NODE_FEE:-0}
+      --disable-upnp
+      --max-conns ${MAX_CONNS:-20}
+      --redistribute ${REDISTRIBUTE:-boost}
+      ${LTC_RPC_USER:-litecoinrpc} ${LTC_RPC_PASSWORD:-CHANGE_ME_LTC}
+    ports:
+      - "9327:9327/tcp"
+      - "9326:9326/tcp"
+    volumes:
+      - ${APP_DATA_DIR}/data/p2pool:/app/data
+    networks:
+      default:
+        ipv4_address: 10.21.0.14
+
+volumes:
+  p2pool-source:
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.21.0.0/16

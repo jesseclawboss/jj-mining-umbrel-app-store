@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: jjmining-dogecoin-node
+name: JJ Dogecoin Node
+tagline: Run a private Dogecoin full node
+category: bitcoin
+version: "1.0.0"
+port: 2102
+description: >-
+  Dogecoin Core full node with persistent data and a simple browser synchronization dashboard.
+developer: JJ Mining
+website: https://github.com/
+submitter: JJ Mining
+submission: https://github.com/
+repo: https://github.com/
+support: https://github.com/
+gallery: []
+releaseNotes: Initial community release.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""

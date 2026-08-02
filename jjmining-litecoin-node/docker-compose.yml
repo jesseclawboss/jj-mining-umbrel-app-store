@@ -1,0 +1,24 @@
+services:
+  app_proxy:
+    environment:
+      APP_HOST: dashboard
+      APP_PORT: 8080
+  dashboard:
+    image: python:3.12-alpine@sha256:9ba6d8cbebf0fb6546ae71f2a1c14f6ffd2fdab83af7fa5669734ef30ad48844
+    command: ["python","/app/server.py"]
+    volumes:
+      - ${APP_DATA_DIR}/dashboard:/app:ro
+    environment:
+      RPC_HOST: litecoin
+      RPC_PORT: "9332"
+      RPC_USER: jjrpc
+      RPC_PASSWORD: jj-litecoin-change-me
+    restart: on-failure
+  litecoin:
+    image: litecoinproject/litecoin-core:0.21.5.5
+    command: ["-server=1","-printtoconsole=1","-txindex=1","-rpcbind=0.0.0.0","-rpcallowip=10.21.0.0/16","-rpcuser=jjrpc","-rpcpassword=jj-litecoin-change-me"]
+    volumes:
+      - ${APP_DATA_DIR}/data:/home/litecoin/.litecoin
+    ports:
+      - "9333:9333"
+    restart: on-failure

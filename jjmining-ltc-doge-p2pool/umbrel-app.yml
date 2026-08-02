@@ -1,0 +1,22 @@
+manifestVersion: 1
+id: jjmining-ltc-doge-p2pool
+name: LTC + DOGE P2Pool
+category: bitcoin
+version: "0.1.0-alpha"
+tagline: Private Litecoin and Dogecoin merged-mining node for Scrypt ASICs
+description: >-
+  Experimental home mining stack using Litecoin Core, Dogecoin Core, and
+  P2Pool V36 AuxPoW merged mining. Intended for private LAN use and testing.
+developer: JJ Mining / Community
+website: https://github.com/frstrtr/p2pool-merged-v36
+repo: https://github.com/frstrtr/p2pool-merged-v36
+support: https://github.com/frstrtr/p2pool-merged-v36/issues
+port: 9327
+submitter: JJ Mining
+submission: community
+releaseNotes: Initial experimental package. Requires configuration before startup.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+gallery: []
