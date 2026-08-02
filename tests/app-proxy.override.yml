@@ -1,0 +1,6 @@
+services:
+  app_proxy:
+    image: nginx:1.29.0-alpine
+  dashboard:
+    ports:
+      - "2101:8080"

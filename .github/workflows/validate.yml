@@ -1,0 +1,83 @@
+name: Validate apps
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/validate.py
+      - run: python scripts/test_dashboard.py
+      - run: yamllint .
+      - run: APP_DATA_DIR=/tmp/jj-litecoin docker compose -f jjmining-litecoin-node/docker-compose.yml -f tests/app-proxy.override.yml config --quiet
+      - run: APP_DATA_DIR=/tmp/jj-dogecoin docker compose -f jjmining-dogecoin-node/docker-compose.yml -f tests/app-proxy.override.yml config --quiet
+      - run: APP_DATA_DIR=/tmp/jj-p2pool docker compose -f jjmining-ltc-doge-p2pool/docker-compose.yml -f tests/app-proxy.override.yml config --quiet
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: >-
+          docker buildx build --platform linux/amd64,linux/arm64 -f common/Coin.Dockerfile
+          --build-arg COIN=litecoin --build-arg ARG_VERSION=0.21.5.6
+          --build-arg SHA_AMD64=3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f
+          --build-arg SHA_ARM64=81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8 common
+      - run: >-
+          docker buildx build --platform linux/amd64,linux/arm64 -f common/Coin.Dockerfile
+          --build-arg COIN=dogecoin --build-arg ARG_VERSION=1.14.9
+          --build-arg SHA_AMD64=4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8
+          --build-arg SHA_ARM64=6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985 common
+      - run: docker build jjmining-litecoin-node/../common/node-dashboard
+      - run: docker build jjmining-ltc-doge-p2pool/dashboard
+      - run: docker build -f jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile jjmining-ltc-doge-p2pool/runtime
+      - run: docker build -f jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile jjmining-ltc-doge-p2pool/runtime
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: common
+          file: common/Coin.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-1
+          build-args: |
+            COIN=litecoin
+            ARG_VERSION=0.21.5.6
+            SHA_AMD64=3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f
+            SHA_ARM64=81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8
+      - uses: docker/build-push-action@v6
+        with:
+          context: common
+          file: common/Coin.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-1
+          build-args: |
+            COIN=dogecoin
+            ARG_VERSION=1.14.9
+            SHA_AMD64=4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8
+            SHA_ARM64=6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985
+      - uses: docker/build-push-action@v6
+        with: {context: common/node-dashboard, platforms: "linux/amd64,linux/arm64", push: true, tags: "ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0"}
+      - uses: docker/build-push-action@v6
+        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0"}
+      - uses: docker/build-push-action@v6
+        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-1"}
+      - uses: docker/build-push-action@v6
+        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1"}

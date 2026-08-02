@@ -1,0 +1,6 @@
+extends: default
+rules:
+  document-start: disable
+  line-length: {max: 240}
+  truthy: {allowed-values: ["true", "false", "on"]}
+  braces: {max-spaces-inside: 1}
