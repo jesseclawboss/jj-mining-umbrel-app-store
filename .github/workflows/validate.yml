@@ -76,7 +76,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with: {context: common/node-dashboard, platforms: "linux/amd64,linux/arm64", push: true, tags: "ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0"}
       - uses: docker/build-push-action@v6
-        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.0"}
+        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.1"}
       - uses: docker/build-push-action@v6
         with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-2"}
       - uses: docker/build-push-action@v6

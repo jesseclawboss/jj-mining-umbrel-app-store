@@ -1,4 +1,4 @@
-import base64,json,os,re,urllib.request
+import base64,json,os,re,time,urllib.request
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 CFG="/config/payout.env"
 def creds(chain):
@@ -11,15 +11,26 @@ def rpc(chain,method,params=[]):
  data=json.dumps({"jsonrpc":"1.0","id":"ui","method":method,"params":params}).encode();auth=base64.b64encode(f"{c['RPC_USER']}:{c['RPC_PASSWORD']}".encode()).decode()
  req=urllib.request.Request(f"http://{chain}:{port}/",data=data,headers={"Authorization":"Basic "+auth,"Content-Type":"application/json"})
  return json.load(urllib.request.urlopen(req,timeout=3))["result"]
+def pool_json(path):
+ return json.load(urllib.request.urlopen(f"http://p2pool:9327/{path}",timeout=3))
+def payout_address():
+ if not os.path.exists(CFG):return None
+ for line in open(CFG):
+  key,_,value=line.strip().partition("=")
+  if key=="LTC_PAYOUT_ADDRESS":return value
+ return None
 def state():
  out={"configured":os.path.exists(CFG)}
  for chain in ("litecoin","dogecoin"):
   try:
    b=rpc(chain,"getblockchaininfo");n=rpc(chain,"getnetworkinfo");out[chain]={"available":True,"blocks":b["blocks"],"headers":b["headers"],"progress":round(b["verificationprogress"]*100,3),"peers":n["connections"],"synced":not b.get("initialblockdownload",True)}
   except Exception as e:out[chain]={"available":False,"error":str(e)[:120]}
- try:out["pool"]=json.load(urllib.request.urlopen("http://p2pool:9327/local_stats",timeout=2))
- except Exception:out["pool"]=None
- out["state"]="setup" if not out["configured"] else ("offline" if not out["litecoin"]["available"] or not out["dogecoin"]["available"] else ("syncing" if not out["litecoin"].get("synced") or not out["dogecoin"].get("synced") else ("healthy" if out["pool"] else "starting")))
+ try:
+  local=pool_json("local_stats");glob=pool_json("global_stats");payouts=pool_json("current_payouts");address=payout_address()
+  rates=local.get("miner_hash_rates",{});local_rate=sum(rates.values())
+  out["pool"]={"local_hashrate":local_rate,"pool_hashrate":glob.get("pool_hash_rate"),"network_hashrate":glob.get("network_hashrate"),"stale_percent":round(float(glob.get("pool_stale_prop",0))*100,2),"peers":local.get("peers",{}),"shares":local.get("shares",{}),"uptime":local.get("uptime"),"version":local.get("version"),"protocol_version":local.get("protocol_version"),"warnings":local.get("warnings",[]),"payout_address":address,"estimated_current_payout":payouts.get(address,0) if address else 0}
+ except Exception as e:out["pool"]={"available":False,"error":str(e)[:120]}
+ out["state"]="setup" if not out["configured"] else ("offline" if not out["litecoin"]["available"] or not out["dogecoin"]["available"] else ("syncing" if not out["litecoin"].get("synced") or not out["dogecoin"].get("synced") else ("healthy" if out["pool"] and out["pool"].get("available",True) else "starting")))
  return out
 class H(BaseHTTPRequestHandler):
  def send(self,c,t,b):b=b.encode();self.send_response(c);self.send_header("Content-Type",t);self.send_header("Content-Length",str(len(b)));self.send_header("Cache-Control","no-store");self.end_headers();self.wfile.write(b)
