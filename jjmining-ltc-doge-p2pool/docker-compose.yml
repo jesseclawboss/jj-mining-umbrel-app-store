@@ -42,12 +42,12 @@ services:
       start_period: 30s
       retries: 5
   p2pool:
-    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-1
+    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo1
     user: "0:0"
     platform: linux/amd64
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
-    volumes: ["${APP_DATA_DIR}/data/p2pool:/app/data", "${APP_DATA_DIR}/config:/config:ro", "${APP_DATA_DIR}/secrets:/secrets:ro"]
-    ports: ["9327:9327/tcp", "9326:9326/tcp"]
+    volumes: ["${APP_DATA_DIR}/data/solo:/app/data", "${APP_DATA_DIR}/config:/config:ro", "${APP_DATA_DIR}/secrets:/secrets:ro"]
+    ports: ["9327:9327/tcp"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "pypy", "-c", "import urllib2; urllib2.urlopen('http://127.0.0.1:9327/local_stats', timeout=3).read()"]
@@ -56,7 +56,7 @@ services:
       start_period: 2m
       retries: 5
   dashboard:
-    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.2.1
+    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.3.0
     user: "0:0"
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}}
     volumes: ["${APP_DATA_DIR}/config:/config", "${APP_DATA_DIR}/secrets:/secrets:ro"]

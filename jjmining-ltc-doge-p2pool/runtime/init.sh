@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 umask 077
-mkdir -p /secrets /config /data/litecoin /data/dogecoin /data/p2pool
+mkdir -p /secrets /config /data/litecoin /data/dogecoin /data/p2pool /data/solo
 make_creds(){ file="$1"; [ -s "$file" ] && return; printf 'RPC_USER=jjrpc_%s\nRPC_PASSWORD=%s\n' "$(od -An -N8 -tx1 /dev/urandom|tr -d ' \n')" "$(od -An -N32 -tx1 /dev/urandom|tr -d ' \n')" > "$file"; }
 make_creds /secrets/litecoin.env; make_creds /secrets/dogecoin.env
 . /secrets/litecoin.env

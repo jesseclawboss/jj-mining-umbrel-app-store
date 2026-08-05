@@ -26,9 +26,10 @@ def state():
    b=rpc(chain,"getblockchaininfo");n=rpc(chain,"getnetworkinfo");out[chain]={"available":True,"blocks":b["blocks"],"headers":b["headers"],"progress":round(b["verificationprogress"]*100,3),"peers":n["connections"],"synced":not b.get("initialblockdownload",True)}
   except Exception as e:out[chain]={"available":False,"error":str(e)[:120]}
  try:
-  local=pool_json("local_stats");glob=pool_json("global_stats");payouts=pool_json("current_payouts");address=payout_address()
+  local=pool_json("local_stats");address=payout_address()
   rates=local.get("miner_hash_rates",{});local_rate=sum(rates.values())
-  out["pool"]={"local_hashrate":local_rate,"pool_hashrate":glob.get("pool_hash_rate"),"network_hashrate":glob.get("network_hashrate"),"stale_percent":round(float(glob.get("pool_stale_prop",0))*100,2),"peers":local.get("peers",{}),"shares":local.get("shares",{}),"uptime":local.get("uptime"),"version":local.get("version"),"protocol_version":local.get("protocol_version"),"warnings":local.get("warnings",[]),"payout_address":address,"estimated_current_payout":payouts.get(address,0) if address else 0}
+  dead_rate=sum(local.get("miner_dead_hash_rates",{}).values())
+  out["pool"]={"mode":"private-solo","local_hashrate":local_rate,"dead_hashrate":dead_rate,"peers":local.get("peers",{}),"shares":local.get("shares",{}),"uptime":local.get("uptime"),"version":local.get("version"),"protocol_version":local.get("protocol_version"),"warnings":local.get("warnings",[]),"payout_address":address,"attempts_to_block":local.get("attempts_to_block"),"attempts_to_merged_block":local.get("attempts_to_merged_block")}
  except Exception as e:out["pool"]={"available":False,"error":str(e)[:120]}
  out["state"]="setup" if not out["configured"] else ("offline" if not out["litecoin"]["available"] or not out["dogecoin"]["available"] else ("syncing" if not out["litecoin"].get("synced") or not out["dogecoin"].get("synced") else ("healthy" if out["pool"] and out["pool"].get("available",True) else "starting")))
  return out

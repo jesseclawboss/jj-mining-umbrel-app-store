@@ -8,7 +8,7 @@ A self-hosted Umbrel app store for Litecoin and Dogecoin nodes and experimental 
 |---|---:|---|---:|
 | JJ Litecoin Node | Litecoin Core 0.21.5.6 | amd64, arm64 | Allow at least 150 GB and growth headroom |
 | JJ Dogecoin Node | Dogecoin Core 1.14.9 | amd64, arm64 | Allow at least 250 GB and growth headroom |
-| JJ LTC/DOGE Merged Mining | P2Pool commit `44a10f3` plus both nodes | **amd64 only** | Combined chain sizes plus at least 20 GB headroom |
+| JJ LTC/DOGE Solo Merged Mining | Isolated P2Pool engine commit `44a10f3` plus both nodes | **amd64 only** | Combined chain sizes plus at least 20 GB headroom |
 
 Storage figures are planning estimates, not hard limits. Chain sizes and initial-sync times continually increase. Initial synchronization can take hours to days depending on CPU, disk, peers, and bandwidth. An SSD, 8 GB RAM, stable broadband, and substantially more free space than the current chain size are strongly recommended. Do not install the merged stack on arm64: its pinned PyPy 2 runtime is x86-64 only.
 
@@ -27,14 +27,14 @@ The old Compose files mounted `${APP_DATA_DIR}/dashboard` over `/app`, but insta
 ## Security and persistence
 
 - An idempotent installation service creates separate 256-bit RPC passwords under `${APP_DATA_DIR}/secrets`; no default credential is committed.
-- RPC ports 9332 and 22555 are never published. Only coin P2P ports 9333/22556 and, in the mining app, Stratum/web 9327 and P2Pool P2P 9326 are published.
+- RPC ports 9332 and 22555 are never published. The mining app publishes only Stratum/web port 9327. Its private sharechain port is not published; coin nodes relay valid blocks through their normal P2P connections.
 - Blockchain, configuration, secrets, and P2Pool state live under `${APP_DATA_DIR}`. Rebuilds, routine updates, container recreation, and reboots do not delete them.
 - Daemons receive `SIGTERM` and a two-minute grace period. Back up only while apps are stopped to obtain a consistent copy.
 - The Umbrel app proxy protects dashboards with the Umbrel login. Stratum has no Umbrel authentication; restrict it to the trusted LAN with the host/router firewall.
 
-## Merged-mining setup
+## Solo merged-mining setup
 
-The mining app is explicitly experimental. It pins [`frstrtr/p2pool-merged-v36`](https://github.com/frstrtr/p2pool-merged-v36) commit `44a10f30ea4fc8a2b60dfb47d5df7fc3b010ede7`, which has current development and documented LTC/DOGE AuxPoW results. It does not use Miningcore. P2Pool V36 is still transitioning from the V35 share format; read the upstream payout and P2SH warnings before risking meaningful hashrate.
+The mining app pins [`frstrtr/p2pool-merged-v36`](https://github.com/frstrtr/p2pool-merged-v36) commit `44a10f30ea4fc8a2b60dfb47d5df7fc3b010ede7` as its Stratum and AuxPoW engine. It uses the upstream engine's documented `PERSIST=False` bootstrap/solo mode, removes all bootstrap addresses, disables incoming and outgoing sharechain connections, and does not publish the P2Pool peer port. It does not use Miningcore or participate in public PPLNS. Only locally connected ASICs contribute work; network-valid LTC and DOGE blocks pay the configured addresses directly.
 
 1. Install and open **JJ LTC/DOGE Merged Mining**. Its dashboard stays available while both nodes start.
 2. Wait until both nodes show fully synchronized.
@@ -43,9 +43,9 @@ The mining app is explicitly experimental. It pins [`frstrtr/p2pool-merged-v36`]
    - URL: `stratum+tcp://umbrel.local:9327`
    - Username: `LTC_ADDRESS,DOGE_ADDRESS.worker-name`
    - Password: `x`
-5. Begin with one miner. Check connected workers, shares, hashrate, P2Pool peers, block history, and payout data in the P2Pool statistics returned by the dashboard. Do not interpret a zero value as a promise of future earnings.
+5. Check accepted and stale hashrate in the dashboard. The public peer count must remain zero. Local shares are diagnostic proofs of work, not payments; only network-valid blocks produce payouts.
 
-Payout addresses are stored with mode 0600. Saving new addresses takes effect after restarting the app. During the current V35/V36 hybrid period, explicit DOGE addresses have upstream limitations for shares found remotely; use separate explicit legacy addresses and review the upstream multi-address guide.
+Payout addresses are stored with mode 0600. Saving new addresses takes effect after restarting the app. Use an LTC address you control and a legacy DOGE address you control. The application never manages either wallet's private keys.
 
 ## Updates, backups, and recovery
 

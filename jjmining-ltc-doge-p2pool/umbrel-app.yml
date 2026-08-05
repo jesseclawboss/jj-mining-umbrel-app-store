@@ -1,15 +1,16 @@
 manifestVersion: 1
 id: jjmining-ltc-doge-p2pool
-name: JJ LTC/DOGE Merged Mining
-tagline: Experimental P2Pool Litecoin and Dogecoin AuxPoW mining
+name: JJ LTC/DOGE Solo Merged Mining
+tagline: Private solo Litecoin and Dogecoin AuxPoW mining
 icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/icon.png
 category: bitcoin
-version: "0.2.4-alpha"
+version: "0.3.0-alpha"
 port: 2103
 description: >-
-  Experimental self-contained Litecoin parent-chain and Dogecoin AuxPoW stack using
-  the actively maintained P2Pool V36 fork. Includes private node RPC, validated payout setup,
-  Stratum for Scrypt ASICs, synchronization status, and upstream P2Pool statistics. amd64 only.
+  Self-contained private solo Litecoin parent-chain and Dogecoin AuxPoW stack using
+  the isolated bootstrap mode of the maintained P2Pool V36 mining engine. It has no public
+  sharechain peers: valid blocks found by your ASIC pay only your configured addresses.
+  Includes private node RPC, validated payout setup, Stratum, and live statistics. amd64 only.
 developer: frstrtr / JJ Mining
 website: https://github.com/frstrtr/p2pool-merged-v36
 submitter: JJ Mining
@@ -18,7 +19,7 @@ repo: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
 support: https://github.com/jesseclawboss/jj-mining-umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/gallery/1.svg
-releaseNotes: Adds clear live hashrate, peer, share, stale-rate, uptime, and payout statistics to the dashboard.
+releaseNotes: Converts mining to isolated private solo mode with direct LTC and DOGE payouts, no public P2Pool peers, no pool fee, and no developer donation. Existing public-share data is preserved separately.
 dependencies: []
 path: ""
 defaultUsername: ""
