@@ -4,6 +4,7 @@ services:
       APP_HOST: jjmining-litecoin-node_dashboard_1
       APP_PORT: "8080"
   litecoin:
+    container_name: jjmining-litecoin-node_litecoin_1
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-2
     user: "0:0"
     environment:
@@ -28,7 +29,7 @@ services:
     user: "0:0"
     environment:
       COIN: Litecoin
-      RPC_HOST: litecoin
+      RPC_HOST: jjmining-litecoin-node_litecoin_1
       RPC_PORT: "9332"
     depends_on:
       litecoin: {condition: service_started}

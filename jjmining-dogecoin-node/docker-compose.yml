@@ -4,6 +4,7 @@ services:
       APP_HOST: jjmining-dogecoin-node_dashboard_1
       APP_PORT: "8080"
   dogecoin:
+    container_name: jjmining-dogecoin-node_dogecoin_1
     image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-2
     user: "0:0"
     environment:
@@ -28,7 +29,7 @@ services:
     user: "0:0"
     environment:
       COIN: Dogecoin
-      RPC_HOST: dogecoin
+      RPC_HOST: jjmining-dogecoin-node_dogecoin_1
       RPC_PORT: "22555"
     depends_on:
       dogecoin: {condition: service_started}

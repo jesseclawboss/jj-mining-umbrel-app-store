@@ -42,6 +42,13 @@ if "Enforcing configured DOGE payout address" not in solo_payout or "merged_oper
  errors.append("solo image must enforce the configured DOGE payout address for every worker")
 if "sole miner payout destination" not in solo_payout or "source = 'operator'" not in solo_payout:
  errors.append("solo payout API must report the configured DOGE operator address")
+for hostname in (
+ "jjmining-ltc-doge-p2pool_litecoin_1",
+ "jjmining-ltc-doge-p2pool_dogecoin_1",
+ "jjmining-ltc-doge-p2pool_mm-adapter_1",
+):
+ if hostname not in solo_compose and hostname not in solo_start and hostname not in (solo/"runtime/init.sh").read_text():
+  errors.append(f"solo stack missing collision-proof service address {hostname}")
 print(f"Validated {len(apps)} Umbrel apps")
 if errors:
  print("\n".join("ERROR: "+e for e in errors),file=sys.stderr);sys.exit(1)

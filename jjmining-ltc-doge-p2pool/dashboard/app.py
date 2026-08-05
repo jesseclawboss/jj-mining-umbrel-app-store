@@ -8,11 +8,13 @@ def creds(chain):
  return d
 def rpc(chain,method,params=[]):
  c=creds(chain);port=9332 if chain=="litecoin" else 22555
+ host=os.environ.get(f"{chain.upper()}_RPC_HOST",chain)
  data=json.dumps({"jsonrpc":"1.0","id":"ui","method":method,"params":params}).encode();auth=base64.b64encode(f"{c['RPC_USER']}:{c['RPC_PASSWORD']}".encode()).decode()
- req=urllib.request.Request(f"http://{chain}:{port}/",data=data,headers={"Authorization":"Basic "+auth,"Content-Type":"application/json"})
+ req=urllib.request.Request(f"http://{host}:{port}/",data=data,headers={"Authorization":"Basic "+auth,"Content-Type":"application/json"})
  return json.load(urllib.request.urlopen(req,timeout=3))["result"]
 def pool_json(path):
- return json.load(urllib.request.urlopen(f"http://p2pool:9327/{path}",timeout=3))
+ host=os.environ.get("P2POOL_HOST","p2pool")
+ return json.load(urllib.request.urlopen(f"http://{host}:9327/{path}",timeout=3))
 def payout_address():
  if not os.path.exists(CFG):return None
  for line in open(CFG):

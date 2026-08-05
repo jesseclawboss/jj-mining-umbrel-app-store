@@ -35,7 +35,7 @@ server:
   rpc_user: "$RPC_USER"
   rpc_password: "$RPC_PASSWORD"
 upstream:
-  host: "dogecoin"
+  host: "jjmining-ltc-doge-p2pool_dogecoin_1"
   port: 22555
   rpc_user: "$RPC_USER"
   rpc_password: "$RPC_PASSWORD"

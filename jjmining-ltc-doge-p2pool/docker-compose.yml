@@ -4,6 +4,7 @@ services:
       APP_HOST: jjmining-ltc-doge-p2pool_dashboard_1
       APP_PORT: "8080"
   litecoin:
+    container_name: jjmining-ltc-doge-p2pool_litecoin_1
     image: ghcr.io/jesseclawboss/jj-mining-litecoin-core:0.21.5.6-2
     user: "0:0"
     environment: {DAEMON: litecoind, CONF_NAME: litecoin.conf, SECRET_NAME: litecoin.env}
@@ -17,6 +18,7 @@ services:
       start_period: 2m
       retries: 5
   dogecoin:
+    container_name: jjmining-ltc-doge-p2pool_dogecoin_1
     image: ghcr.io/jesseclawboss/jj-mining-dogecoin-core:1.14.9-2
     user: "0:0"
     environment: {DAEMON: dogecoind, CONF_NAME: dogecoin.conf, SECRET_NAME: dogecoin.env}
@@ -30,6 +32,7 @@ services:
       start_period: 2m
       retries: 5
   mm-adapter:
+    container_name: jjmining-ltc-doge-p2pool_mm-adapter_1
     image: ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-2
     user: "0:0"
     depends_on: {dogecoin: {condition: service_started}}
@@ -42,7 +45,8 @@ services:
       start_period: 30s
       retries: 5
   p2pool:
-    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo3
+    container_name: jjmining-ltc-doge-p2pool_p2pool_1
+    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo4
     user: "0:0"
     platform: linux/amd64
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
@@ -56,9 +60,14 @@ services:
       start_period: 2m
       retries: 5
   dashboard:
-    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.3.0
+    container_name: jjmining-ltc-doge-p2pool_dashboard_1
+    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.3.1
     user: "0:0"
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}}
+    environment:
+      LITECOIN_RPC_HOST: jjmining-ltc-doge-p2pool_litecoin_1
+      DOGECOIN_RPC_HOST: jjmining-ltc-doge-p2pool_dogecoin_1
+      P2POOL_HOST: jjmining-ltc-doge-p2pool_p2pool_1
     volumes: ["${APP_DATA_DIR}/config:/config", "${APP_DATA_DIR}/secrets:/secrets:ro"]
     restart: unless-stopped
     init: true
