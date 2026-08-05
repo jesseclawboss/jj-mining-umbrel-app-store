@@ -40,6 +40,8 @@ if "PERSIST = False" not in solo_image or "BOOTSTRAP_ADDRS = []" not in solo_ima
  errors.append("solo image must disable public sharechain persistence and bootstrap peers")
 if "Enforcing configured DOGE payout address" not in solo_payout or "merged_operator_address.strip()" not in solo_payout:
  errors.append("solo image must enforce the configured DOGE payout address for every worker")
+if "sole miner payout destination" not in solo_payout or "source = 'operator'" not in solo_payout:
+ errors.append("solo payout API must report the configured DOGE operator address")
 print(f"Validated {len(apps)} Umbrel apps")
 if errors:
  print("\n".join("ERROR: "+e for e in errors),file=sys.stderr);sys.exit(1)

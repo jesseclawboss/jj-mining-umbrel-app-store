@@ -4,7 +4,7 @@ name: JJ LTC/DOGE Solo Merged Mining
 tagline: Private solo Litecoin and Dogecoin AuxPoW mining
 icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/icon.png
 category: bitcoin
-version: "0.3.1-alpha"
+version: "0.3.2-alpha"
 port: 2103
 description: >-
   Self-contained private solo Litecoin parent-chain and Dogecoin AuxPoW stack using

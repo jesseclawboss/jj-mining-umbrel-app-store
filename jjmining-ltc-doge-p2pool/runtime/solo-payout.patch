@@ -1,7 +1,48 @@
+diff --git a/p2pool/web.py b/p2pool/web.py
+--- a/p2pool/web.py
++++ b/p2pool/web.py
+@@ -1068,6 +1068,27 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Eve
+                 except Exception:
+                     pass
+             
++            # Private solo policy: the configured operator DOGE address is the
++            # sole miner payout destination. This mirrors WorkerBridge's merged
++            # coinbase override and keeps this API from displaying a misleading
++            # auto-converted address while older local share records age out.
++            operator_address = getattr(wb, 'merged_operator_address', None)
++            if operator_address and accepted_weight > 0:
++                operator_address = operator_address.strip()
++                bitcoin_data.address_to_pubkey_hash(operator_address, chain['addr_net'])
++                parent_address = getattr(wb.args, 'address', None)
++                if not parent_address:
++                    try:
++                        parent_address = bitcoin_data.pubkey_hash_to_address(
++                            wb.my_pubkey_hash, parent_net.ADDRESS_VERSION, -1, parent_net)
++                    except Exception:
++                        parent_address = None
++                resolved = {operator_address: accepted_weight}
++                key_to_parent = {}
++                if parent_address:
++                    key_to_parent[operator_address] = parent_address
++                merged_key_to_parent = {}
++
+             if accepted_weight <= 0:
+                 continue
+             
+@@ -1101,6 +1122,9 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Eve
+                 else:
+                     source = 'explicit'
+                 
++                if operator_address and merged_address == operator_address:
++                    source = 'operator'
++
+                 entry = {
+                     'network': chain['network'],
+                     'symbol': chain['symbol'],
 diff --git a/p2pool/work.py b/p2pool/work.py
 --- a/p2pool/work.py
 +++ b/p2pool/work.py
-@@ -1516,7 +1516,7 @@ class WorkerBridge(object):
+@@ -1517,7 +1517,7 @@ class WorkerBridge(worker_interface.WorkerBridge):
              parts = user.split(',', 1)  # Only split on first comma
              user = parts[0]  # Primary address (Litecoin)
              if len(parts) > 1:
@@ -10,7 +51,7 @@ diff --git a/p2pool/work.py b/p2pool/work.py
                  # Strip worker name: split on '.' first, then '_'
                  # Both are valid worker separators and may co-exist
                  if '.' in merged_addr:
-@@ -1591,6 +1591,33 @@ class WorkerBridge(object):
+@@ -1591,6 +1591,33 @@ class WorkerBridge(worker_interface.WorkerBridge):
                      merged_addresses['dogecoin'] = merged_addr
                      merged_addresses['_validated'] = None  # Signals: do not store in share
          
