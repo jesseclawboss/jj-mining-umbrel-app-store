@@ -1,0 +1,46 @@
+diff --git a/p2pool/work.py b/p2pool/work.py
+--- a/p2pool/work.py
++++ b/p2pool/work.py
+@@ -1516,7 +1516,7 @@ class WorkerBridge(object):
+             parts = user.split(',', 1)  # Only split on first comma
+             user = parts[0]  # Primary address (Litecoin)
+             if len(parts) > 1:
+-                merged_addr = parts[1]
++                merged_addr = parts[1].strip()
+                 # Strip worker name: split on '.' first, then '_'
+                 # Both are valid worker separators and may co-exist
+                 if '.' in merged_addr:
+@@ -1591,6 +1591,33 @@ class WorkerBridge(object):
+                     merged_addresses['dogecoin'] = merged_addr
+                     merged_addresses['_validated'] = None  # Signals: do not store in share
+         
++        # Private solo policy: the dashboard-configured DOGE payout address is
++        # authoritative for every connected worker. A typo, omitted address, or
++        # miner firmware that rewrites the username must never redirect a block
++        # to an address derived from the LTC payout hash.
++        if self.merged_operator_address:
++            try:
++                operator_addr = self.merged_operator_address.strip()
++                chain_net = self._get_merged_address_net(98)
++                if chain_net is None:
++                    raise ValueError('Dogecoin network parameters unavailable')
++                op_hash, op_version, op_witver = bitcoin_data.address_to_pubkey_hash(
++                    operator_addr, chain_net)
++                op_script = bitcoin_data.pubkey_hash_to_script2(
++                    op_hash, op_version, op_witver, chain_net)
++                merged_addresses['dogecoin'] = operator_addr
++                merged_addresses['_validated'] = [
++                    {'chain_id': 98, 'script': op_script},
++                ]
++                merged_addresses['_auto_converted'] = False
++                merged_addresses['_redistributed'] = False
++                if not getattr(self, '_solo_operator_logged', False):
++                    self._solo_operator_logged = True
++                    print >>sys.stderr, '[SOLO] Enforcing configured DOGE payout address: %s' % operator_addr
++            except Exception as e:
++                print >>sys.stderr, '[SOLO] CRITICAL: configured DOGE payout address rejected: %s' % e
++                raise
++
+         # Parse worker name from primary address if not already set
+         if not worker:
+             if '_' in user:

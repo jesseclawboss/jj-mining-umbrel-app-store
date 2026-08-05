@@ -25,6 +25,7 @@ solo=ROOT/"jjmining-ltc-doge-p2pool"
 solo_compose=(solo/"docker-compose.yml").read_text()
 solo_start=(solo/"runtime/p2pool-start.sh").read_text()
 solo_image=(solo/"runtime/P2Pool.Dockerfile").read_text()
+solo_payout=(solo/"runtime/solo-payout.patch").read_text()
 for required,label in [
  ("--max-conns 0","incoming sharechain isolation"),
  ("--outgoing-conns 0","outgoing sharechain isolation"),
@@ -37,6 +38,8 @@ if "9326:9326" in solo_compose:errors.append("solo mode must not publish the P2P
 if "data/solo:/app/data" not in solo_compose:errors.append("solo mode must not load the old public sharechain data")
 if "PERSIST = False" not in solo_image or "BOOTSTRAP_ADDRS = []" not in solo_image:
  errors.append("solo image must disable public sharechain persistence and bootstrap peers")
+if "Enforcing configured DOGE payout address" not in solo_payout or "merged_operator_address.strip()" not in solo_payout:
+ errors.append("solo image must enforce the configured DOGE payout address for every worker")
 print(f"Validated {len(apps)} Umbrel apps")
 if errors:
  print("\n".join("ERROR: "+e for e in errors),file=sys.stderr);sys.exit(1)

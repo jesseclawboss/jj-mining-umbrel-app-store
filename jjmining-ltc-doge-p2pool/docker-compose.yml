@@ -42,7 +42,7 @@ services:
       start_period: 30s
       retries: 5
   p2pool:
-    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo1
+    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo2
     user: "0:0"
     platform: linux/amd64
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}

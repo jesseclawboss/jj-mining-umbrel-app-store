@@ -4,7 +4,7 @@ name: JJ LTC/DOGE Solo Merged Mining
 tagline: Private solo Litecoin and Dogecoin AuxPoW mining
 icon: https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/icon.png
 category: bitcoin
-version: "0.3.0-alpha"
+version: "0.3.1-alpha"
 port: 2103
 description: >-
   Self-contained private solo Litecoin parent-chain and Dogecoin AuxPoW stack using
@@ -19,7 +19,7 @@ repo: https://github.com/jesseclawboss/jj-mining-umbrel-app-store
 support: https://github.com/jesseclawboss/jj-mining-umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/jesseclawboss/jj-mining-umbrel-app-store/main/jjmining-ltc-doge-p2pool/gallery/1.svg
-releaseNotes: Converts mining to isolated private solo mode with direct LTC and DOGE payouts, no public P2Pool peers, no pool fee, and no developer donation. Existing public-share data is preserved separately.
+releaseNotes: Enforces the dashboard-configured DOGE payout address for every solo worker and tolerates miner firmware that inserts whitespace in combined usernames.
 dependencies: []
 path: ""
 defaultUsername: ""
