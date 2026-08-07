@@ -39,10 +39,46 @@ diff --git a/p2pool/web.py b/p2pool/web.py
                  entry = {
                      'network': chain['network'],
                      'symbol': chain['symbol'],
+@@ -1516,6 +1540,14 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Eve
+         nb = wb.node_best_difficulty
+         network_difficulty = bitcoin_data.target_to_difficulty(node.bitcoind_work.value['bits'].target)
+ 
++        now = time.time()
++        cutoff = now - 24*60*60
++        while (wb.recent_best_difficulties and
++                wb.recent_best_difficulties[0][0] < cutoff):
++            wb.recent_best_difficulties.pop(0)
++        daily = max(wb.recent_best_difficulties, key=lambda item: item[1]) \
++            if wb.recent_best_difficulties else None
++
+         def pct_of_block(diff, net_diff):
+             return (diff / net_diff * 100) if net_diff > 0 and diff > 0 else 0
+ 
+@@ -1544,6 +1576,12 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Eve
+                 timestamp=nb['round_ts'],
+                 started=nb['round_start'],
+             ),
++            daily=dict(
++                difficulty=daily[1] if daily else 0,
++                miner=daily[2] if daily else None,
++                timestamp=daily[0] if daily else 0,
++                started=cutoff,
++            ),
+         )
+ 
+         # Add merged chain (DOGE) best share stats
 diff --git a/p2pool/work.py b/p2pool/work.py
 --- a/p2pool/work.py
 +++ b/p2pool/work.py
-@@ -1517,7 +1517,7 @@ class WorkerBridge(worker_interface.WorkerBridge):
+@@ -231,6 +231,7 @@ class WorkerBridge(worker_interface.WorkerBridge):
+         # Format: {user: {'all_time': diff, 'session': diff, 'round': diff, ...}}
+         self.miner_best_difficulty = {}
+         self.session_start_time = time.time()
++        self.recent_best_difficulties = []  # Exact accepted submissions in rolling 24h
+         
+         # Node-wide best difficulty tracking (across all miners)
+         self.node_best_difficulty = {
+@@ -1517,7 +1518,7 @@ class WorkerBridge(worker_interface.WorkerBridge):
              parts = user.split(',', 1)  # Only split on first comma
              user = parts[0]  # Primary address (Litecoin)
              if len(parts) > 1:
@@ -51,7 +87,7 @@ diff --git a/p2pool/work.py b/p2pool/work.py
                  # Strip worker name: split on '.' first, then '_'
                  # Both are valid worker separators and may co-exist
                  if '.' in merged_addr:
-@@ -1591,6 +1591,33 @@ class WorkerBridge(worker_interface.WorkerBridge):
+@@ -1591,6 +1592,33 @@ class WorkerBridge(worker_interface.WorkerBridge):
                      merged_addresses['dogecoin'] = merged_addr
                      merged_addresses['_validated'] = None  # Signals: do not store in share
          
@@ -85,3 +121,15 @@ diff --git a/p2pool/work.py b/p2pool/work.py
          # Parse worker name from primary address if not already set
          if not worker:
              if '_' in user:
+@@ -2032,6 +2060,11 @@ class WorkerBridge(worker_interface.WorkerBridge):
+     def update_best_difficulty(self, user, difficulty):
+         """Track best difficulty for a miner and node-wide (parent + merged)"""
+         now = time.time()
++        cutoff = now - 24*60*60
++        self.recent_best_difficulties.append((now, difficulty, user))
++        while (self.recent_best_difficulties and
++                self.recent_best_difficulties[0][0] < cutoff):
++            self.recent_best_difficulties.pop(0)
+ 
+         # Get current network difficulties at this moment
+         try:

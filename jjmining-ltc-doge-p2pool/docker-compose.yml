@@ -46,7 +46,7 @@ services:
       retries: 5
   p2pool:
     container_name: jjmining-ltc-doge-p2pool_p2pool_1
-    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo4
+    image: ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo5
     user: "0:0"
     platform: linux/amd64
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}, mm-adapter: {condition: service_started}}
@@ -61,7 +61,7 @@ services:
       retries: 5
   dashboard:
     container_name: jjmining-ltc-doge-p2pool_dashboard_1
-    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.3.1
+    image: ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.4.0
     user: "0:0"
     depends_on: {litecoin: {condition: service_started}, dogecoin: {condition: service_started}}
     environment:
