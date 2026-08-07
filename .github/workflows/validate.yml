@@ -12,6 +12,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: python scripts/validate.py
       - run: python scripts/test_dashboard.py
+      - run: node scripts/test_dashboard_formatter.js
       - run: yamllint .
       - run: APP_DATA_DIR=/tmp/jj-litecoin docker compose -f jjmining-litecoin-node/docker-compose.yml -f tests/app-proxy.override.yml config --quiet
       - run: APP_DATA_DIR=/tmp/jj-dogecoin docker compose -f jjmining-dogecoin-node/docker-compose.yml -f tests/app-proxy.override.yml config --quiet
@@ -63,6 +64,7 @@ jobs:
               - 'jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile'
               - 'jjmining-ltc-doge-p2pool/runtime/p2pool-start.sh'
               - 'jjmining-ltc-doge-p2pool/runtime/solo-payout.patch'
+              - 'jjmining-ltc-doge-p2pool/docker-compose.yml'
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -100,10 +102,10 @@ jobs:
         with: {context: common/node-dashboard, platforms: "linux/amd64,linux/arm64", push: true, tags: "ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0"}
       - uses: docker/build-push-action@v6
         if: steps.changes.outputs.dashboard == 'true'
-        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.4.0"}
+        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.4.1"}
       - uses: docker/build-push-action@v6
         if: steps.changes.outputs.adapter == 'true'
         with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-2"}
       - uses: docker/build-push-action@v6
         if: steps.changes.outputs.p2pool == 'true'
-        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo5"}
+        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo6"}

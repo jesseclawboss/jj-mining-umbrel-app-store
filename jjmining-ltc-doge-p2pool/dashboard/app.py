@@ -1,6 +1,7 @@
 import base64,json,os,re,threading,time,urllib.request
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 CFG="/config/payout.env"
+APP_DIR=os.environ.get("DASHBOARD_APP_DIR","/app")
 STATS=os.environ.get("DASHBOARD_STATS_FILE","/config/dashboard-stats.json")
 STALE_AFTER=30
 _stats_lock=threading.Lock()
@@ -76,7 +77,8 @@ class H(BaseHTTPRequestHandler):
  def do_GET(self):
   if self.path=="/health":return self.send(200,"text/plain","ok")
   if self.path=="/api/status":return self.send(200,"application/json",json.dumps(state()))
-  if self.path=="/":return self.send(200,"text/html; charset=utf-8",open('/app/index.html').read())
+  if self.path=="/format.js":return self.send(200,"text/javascript; charset=utf-8",open(os.path.join(APP_DIR,'format.js')).read())
+  if self.path=="/":return self.send(200,"text/html; charset=utf-8",open(os.path.join(APP_DIR,'index.html')).read())
   self.send(404,"text/plain","not found")
  def do_POST(self):
   if self.path!="/api/config":return self.send(404,"text/plain","not found")

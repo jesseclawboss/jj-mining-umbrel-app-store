@@ -26,3 +26,12 @@ with tempfile.TemporaryDirectory() as td:
   c=http.client.HTTPConnection("127.0.0.1",8080,timeout=2);c.request("GET","/api/status");r=c.getresponse();body=r.read().decode();assert r.status==200 and '"rpc": false' in body and '"state": "starting"' in body
   print("Dashboard aggregation, telemetry persistence, block-event, and offline-state tests passed")
  finally:p.terminate();p.wait(timeout=5)
+ pool_env=os.environ|{"DASHBOARD_APP_DIR":str(ROOT/"jjmining-ltc-doge-p2pool/dashboard")}
+ p=subprocess.Popen([sys.executable,str(ROOT/"jjmining-ltc-doge-p2pool/dashboard/app.py")],env=pool_env,stdout=subprocess.DEVNULL)
+ try:
+  for _ in range(30):
+   try:
+    c=http.client.HTTPConnection("127.0.0.1",8080,timeout=1);c.request("GET","/format.js");r=c.getresponse();body=r.read().decode();assert r.status==200 and "formatDifficulty" in body;break
+   except OSError:time.sleep(.1)
+  else:raise AssertionError("pool dashboard did not serve formatter asset")
+ finally:p.terminate();p.wait(timeout=5)
