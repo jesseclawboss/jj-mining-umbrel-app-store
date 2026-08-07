@@ -6,7 +6,7 @@
   <title>JJ Solo Merged Mining</title>
   <style>
     :root{color-scheme:dark;font-family:system-ui;background:#090b10;color:#eef2ff}
-    body{max-width:1040px;margin:auto;padding:28px}.notice{background:#142d25;border:1px solid #27694f;padding:16px;border-radius:14px}
+    body{max-width:1040px;margin:auto;padding:28px}.notice{background:#142d25;border:1px solid #27694f;padding:16px;border-radius:14px}.alert{background:#3b2d0b;border-color:#a97b18}.error{color:#ff8793}.stale{color:#ffd166}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.card{background:#131720;border:1px solid #29303e;padding:18px;border-radius:16px}
     .metric{font-size:1.65rem;font-weight:700;margin:.35rem 0}.label,.muted{color:#98a2b8}input,button{width:100%;padding:12px;margin:6px 0 12px;border-radius:9px;border:1px solid #414a5d;background:#0d1017;color:white}
     button{background:#536dfe;font-weight:bold}pre{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:500px){body{padding:17px}}
@@ -16,12 +16,21 @@
   <h1>JJ LTC + DOGE Solo Merged Mining</h1>
   <p class="notice"><b>Private solo mode.</b> Your ASIC is the only share source. There are no public P2Pool peers, pool fees, or developer donations. A network-valid block pays your configured address directly.</p>
   <p>Status: <b id="state">loading</b></p>
+  <p id="dataState" class="muted">Loading live pool data…</p>
+  <p id="blockAlert" class="notice alert" hidden></p>
   <h2>Mining</h2>
   <div class="grid">
     <div class="card"><div class="label">Accepted hashrate</div><div class="metric" id="localRate">—</div></div>
+    <div class="card"><div class="label">Active workers</div><div class="metric" id="workers">—</div></div>
     <div class="card"><div class="label">Dead/stale hashrate</div><div class="metric" id="deadRate">—</div></div>
     <div class="card"><div class="label">Local sharechain shares</div><div class="metric" id="shares">—</div></div>
     <div class="card"><div class="label">Public pool peers</div><div class="metric" id="peers">—</div></div>
+  </div>
+  <h2>Best share difficulty</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Pool lifetime best</div><div class="metric" id="allBest">—</div><div class="muted">Persisted across pool restarts</div></div>
+    <div class="card"><div class="label">Last 24 hours</div><div class="metric" id="dailyBest">—</div><div class="muted">Rolling submitted-share window</div></div>
+    <div class="card"><div class="label">Session best</div><div class="metric" id="sessionBest">—</div><div class="muted" id="sessionSince">Current P2Pool process</div></div>
   </div>
   <h2>Nodes</h2>
   <div class="grid">
@@ -37,8 +46,9 @@
     <button onclick="save()">Validate and save</button><p id="result"></p>
   </div>
   <script>
-    const rate=n=>{if(n==null)return'—';for(const u of['H/s','kH/s','MH/s','GH/s','TH/s','PH/s']){if(n<1000)return n.toFixed(n<10?2:1)+' '+u;n/=1000}return n.toFixed(1)+' EH/s'},num=n=>Number(n||0).toLocaleString();
-    async function refresh(){let d=await fetch('api/status',{cache:'no-store'}).then(r=>r.json()),p=d.pool||{};state.textContent=d.state;ltc.textContent=JSON.stringify(d.litecoin,null,2);doge.textContent=JSON.stringify(d.dogecoin,null,2);localRate.textContent=rate(p.local_hashrate);deadRate.textContent=rate(p.dead_hashrate);peers.textContent=num((p.peers||{}).incoming+(p.peers||{}).outgoing);shares.textContent=num((p.shares||{}).total);pool.textContent=p.error||['Mode: '+(p.mode||'—'),'Version: '+(p.version||'—'),'Uptime: '+Math.floor((p.uptime||0)/3600)+' hours','LTC expected attempts: '+num(p.attempts_to_block),'DOGE expected attempts: '+num(p.attempts_to_merged_block),'Warnings: '+((p.warnings||[]).join(', ')||'None')].join('\n')}
+    const rate=n=>{if(n==null)return'—';n=Number(n);for(const u of['H/s','kH/s','MH/s','GH/s','TH/s','PH/s']){if(n<1000)return n.toFixed(n<10?2:1)+' '+u;n/=1000}return n.toFixed(1)+' EH/s'},num=n=>n==null?'—':Number(n).toLocaleString(undefined,{maximumFractionDigits:3}),when=n=>n?new Date(n*1000).toLocaleString():'—';
+    let latestBlock=null;
+    async function refresh(){try{let r=await fetch('api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);let d=await r.json(),p=d.pool||{},b=p.best_difficulty||{};state.textContent=d.state;ltc.textContent=JSON.stringify(d.litecoin,null,2);doge.textContent=JSON.stringify(d.dogecoin,null,2);if(!p.available){dataState.textContent='Pool telemetry unavailable: '+(p.error||'unknown error');dataState.className='error';for(const e of[localRate,deadRate,workers,peers,shares,allBest,dailyBest,sessionBest])e.textContent='—';pool.textContent=p.error||'Pool API unavailable';return}let age=Date.now()/1000-p.sampled_at,isStale=age>(p.stale_after||30);dataState.textContent=isStale?'Pool data is stale ('+Math.floor(age)+'s old)':'Live pool data · updated '+Math.max(0,Math.floor(age))+'s ago';dataState.className=isStale?'stale':'muted';localRate.textContent=rate(p.local_hashrate);deadRate.textContent=rate(p.dead_hashrate);workers.textContent=num(p.worker_count);peers.textContent=p.peers?num(p.peers.incoming+p.peers.outgoing):'—';shares.textContent=p.shares?num(p.shares.total):'—';allBest.textContent=num(b.all_time);dailyBest.textContent=num(b.daily);sessionBest.textContent=num(b.session);sessionSince.textContent=b.session_started?'Since '+when(b.session_started):'Current P2Pool process';let found=p.latest_block;if(found&&found.hash&&(p.block_event||latestBlock&&latestBlock!==found.hash)){blockAlert.hidden=false;blockAlert.textContent='Block found: '+(found.number?'height '+num(found.number)+' · ':'')+(found.status||'detected')+' · '+when(found.ts)}if(found&&found.hash)latestBlock=found.hash;pool.textContent=['Mode: '+(p.mode||'—'),'Version: '+(p.version||'—'),'Uptime: '+(p.uptime==null?'—':Math.floor(p.uptime/3600)+' hours'),'Workers: '+(p.workers||[]).map(w=>w.name+' ('+rate(w.hashrate)+')').join(', '),'LTC expected attempts: '+num(p.attempts_to_block),'DOGE expected attempts: '+num(p.attempts_to_merged_block),'Warnings: '+((p.warnings||[]).join(', ')||'None')].join('\n')}catch(e){state.textContent='offline';dataState.textContent='Dashboard API unavailable: '+e.message;dataState.className='error'}}
     async function save(){let r=await fetch('api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ltc:la.value,doge:da.value})});let d=await r.json();result.textContent=d.ok?'Saved. Solo mining will start shortly.':d.error;refresh()}refresh();setInterval(refresh,5000)
   </script>
 </body>

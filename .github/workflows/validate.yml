@@ -43,6 +43,26 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 2}
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            coin_core:
+              - 'common/Coin.Dockerfile'
+              - 'common/coin-entrypoint.sh'
+              - 'common/init.sh'
+            node_dashboard:
+              - 'common/node-dashboard/**'
+            dashboard:
+              - 'jjmining-ltc-doge-p2pool/dashboard/**'
+            adapter:
+              - 'jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile'
+              - 'jjmining-ltc-doge-p2pool/runtime/adapter-start.sh'
+            p2pool:
+              - 'jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile'
+              - 'jjmining-ltc-doge-p2pool/runtime/p2pool-start.sh'
+              - 'jjmining-ltc-doge-p2pool/runtime/solo-payout.patch'
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -50,6 +70,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.coin_core == 'true'
         with:
           context: common
           file: common/Coin.Dockerfile
@@ -62,6 +83,7 @@ jobs:
             SHA_AMD64=3c0a217651a431ef446641669a0b74ce7dbcd9b9ed1a118fc830b8f6779ee83f
             SHA_ARM64=81c3ca2a7fcbccaabaf0a0ea2022f1990787f0cc1937aaad4dcc61d2856799a8
       - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.coin_core == 'true'
         with:
           context: common
           file: common/Coin.Dockerfile
@@ -74,10 +96,14 @@ jobs:
             SHA_AMD64=4f227117b411a7c98622c970986e27bcfc3f547a72bef65e7d9e82989175d4f8
             SHA_ARM64=6928c895a20d0bcb6d5c7dcec753d35c884a471aaf8ad4242a89a96acb4f2985
       - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.node_dashboard == 'true'
         with: {context: common/node-dashboard, platforms: "linux/amd64,linux/arm64", push: true, tags: "ghcr.io/jesseclawboss/jj-mining-node-dashboard:1.1.0"}
       - uses: docker/build-push-action@v6
-        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.3.1"}
+        if: steps.changes.outputs.dashboard == 'true'
+        with: {context: jjmining-ltc-doge-p2pool/dashboard, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-merged-dashboard:0.4.0"}
       - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.adapter == 'true'
         with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/Adapter.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-mm-adapter:44a10f3-2"}
       - uses: docker/build-push-action@v6
-        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo4"}
+        if: steps.changes.outputs.p2pool == 'true'
+        with: {context: jjmining-ltc-doge-p2pool/runtime, file: jjmining-ltc-doge-p2pool/runtime/P2Pool.Dockerfile, platforms: linux/amd64, push: true, tags: "ghcr.io/jesseclawboss/jj-mining-p2pool:44a10f3-solo5"}
